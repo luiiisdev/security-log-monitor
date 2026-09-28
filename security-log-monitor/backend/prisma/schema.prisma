@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  eventType String   // AUTH_SUCCESS, AUTH_FAILURE, BRUTE_FORCE_ATTEMPT, SUSPICIOUS_IP, INJECTION_ATTEMPT
+  severity  String   @default("INFO") // INFO, WARNING, CRITICAL
+  ipAddress String
+  userAgent String?
+  username  String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  alerts    IncidentAlert[]
+
+  @@index([ipAddress])
+  @@index([eventType])
+  @@index([severity])
+  @@map("security_logs")
+}
+
+model IncidentAlert {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  severity    String    @default("CRITICAL")
+  isResolved  Boolean   @default(false)
+  ipAddress   String
+  
+  logId       String?
+  log         SecurityLog? @relation(fields: [logId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@map("incident_alerts")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ANALYST")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
